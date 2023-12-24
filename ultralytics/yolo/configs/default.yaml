@@ -108,3 +108,6 @@ hydra:
 
 # Debug, do not modify -------------------------------------------------------------------------------------------------
 v5loader: False  # use legacy YOLOv5 dataloader
+
+# Manually made configs (not in original) ------------------------------------------------------------------------------
+save_dir: null # path to save dir
