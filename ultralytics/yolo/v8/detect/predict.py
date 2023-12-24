@@ -238,6 +238,12 @@ class DetectionPredictor(BasePredictor):
             identities = outputs[:, -2]
             object_id = outputs[:, -1]
             
+            # TODO: Save to CSV/JSON file instead of just printing.
+            # Research GRU time series classification and check if CSV or JSON is better as input for GRU.
+            for i in range(len(object_id)):
+                x1, y1, x2, y2 = [int(i) for i in bbox_xyxy[i]]
+                print(f"ID: {identities[i]}, Class: {self.model.names[object_id[i]]}, X1Y1: {x1}, {y1}, X2Y2: {x2}, {y2}")
+
             draw_boxes(im0, bbox_xyxy, self.model.names, object_id,identities)
 
         return log_string
