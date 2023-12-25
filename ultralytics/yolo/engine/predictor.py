@@ -40,6 +40,7 @@ from ultralytics.yolo.utils.checks import check_file, check_imgsz, check_imshow
 from ultralytics.yolo.utils.files import increment_path
 from ultralytics.yolo.utils.torch_utils import select_device, smart_inference_mode
 
+import json
 
 class BasePredictor:
     """
@@ -170,6 +171,15 @@ class BasePredictor:
         model.eval()
         self.seen, self.windows, self.dt = 0, [], (ops.Profile(), ops.Profile(), ops.Profile())
         self.all_outputs = []
+
+        final_result = {
+            "size": {
+                "width": self.imgsz[0],
+                "height": self.imgsz[1]
+            },
+            "frames": []
+        }
+
         for batch in self.dataset:
             self.run_callbacks("on_predict_batch_start")
             path, im, im0s, vid_cap, s = batch
@@ -186,12 +196,15 @@ class BasePredictor:
             # postprocess
             with self.dt[2]:
                 preds = self.postprocess(preds, im, im0s)
-
+            
             for i in range(len(im)):
                 if self.webcam:
                     path, im0s = path[i], im0s[i]
                 p = Path(path)
-                s += self.write_results(i, preds, (p, im, im0s))
+
+                batch_result = self.write_results(i, preds, (p, im, im0s))
+                final_result["frames"].append(batch_result["objects"])
+                s += batch_result["log_string"]
 
                 if self.args.show:
                     self.show(p)
@@ -203,6 +216,11 @@ class BasePredictor:
             LOGGER.info(f"{s}{'' if len(preds) else '(no detections), '}{self.dt[1].dt * 1E3:.1f}ms")
 
             self.run_callbacks("on_predict_batch_end")
+    
+        result_file = self.save_dir / "deepsort-output.json"
+        with open(result_file, "w") as f:
+            json.dump(final_result, f)
+            print(f"PLACED RESULT TO {result_file}")
 
         # Print results
         t = tuple(x.t / self.seen * 1E3 for x in self.dt)  # speeds per image

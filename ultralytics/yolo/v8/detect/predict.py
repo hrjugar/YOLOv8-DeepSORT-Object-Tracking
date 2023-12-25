@@ -20,10 +20,12 @@ from deep_sort_pytorch.utils.parser import get_config
 from deep_sort_pytorch.deep_sort import DeepSort
 from collections import deque
 import numpy as np
+
 palette = (2 ** 11 - 1, 2 ** 15 - 1, 2 ** 20 - 1)
 data_deque = {}
 
 deepsort = None
+relevant_classes = ["car", "motorcycle", "bus", "truck"]
 
 def init_tracker():
     global deepsort
@@ -191,15 +193,19 @@ class DetectionPredictor(BasePredictor):
         return preds
 
     def write_results(self, idx, preds, batch):
+        result = {
+            "log_string": "",
+            "objects": []
+        }
+
         p, im, im0 = batch
         all_outputs = []
-        log_string = ""
         if len(im.shape) == 3:
             im = im[None]  # expand for batch dim
         self.seen += 1
         im0 = im0.copy()
         if self.webcam:  # batch_size >= 1
-            log_string += f'{idx}: '
+            result["log_string"] += f'{idx}: '
             frame = self.dataset.count
         else:
             frame = getattr(self.dataset, 'frame', 0)
@@ -207,16 +213,16 @@ class DetectionPredictor(BasePredictor):
         self.data_path = p
         save_path = str(self.save_dir / p.name)  # im.jpg
         self.txt_path = str(self.save_dir / 'labels' / p.stem) + ('' if self.dataset.mode == 'image' else f'_{frame}')
-        log_string += '%gx%g ' % im.shape[2:]  # print string
+        result["log_string"] += '%gx%g ' % im.shape[2:]  # print string
         self.annotator = self.get_annotator(im0)
 
         det = preds[idx]
         all_outputs.append(det)
         if len(det) == 0:
-            return log_string
+            return result
         for c in det[:, 5].unique():
             n = (det[:, 5] == c).sum()  # detections per class
-            log_string += f"{n} {self.model.names[int(c)]}{'s' * (n > 1)}, "
+            result["log_string"] += f"{n} {self.model.names[int(c)]}{'s' * (n > 1)}, "
         # write
         gn = torch.tensor(im0.shape)[[1, 0, 1, 0]]  # normalization gain whwh
         xywh_bboxs = []
@@ -233,20 +239,36 @@ class DetectionPredictor(BasePredictor):
         confss = torch.Tensor(confs)
           
         outputs = deepsort.update(xywhs, confss, oids, im0)
+
         if len(outputs) > 0:
             bbox_xyxy = outputs[:, :4]
             identities = outputs[:, -2]
-            object_id = outputs[:, -1]
+            object_ids = outputs[:, -1]
             
             # TODO: Save to CSV/JSON file instead of just printing.
             # Research GRU time series classification and check if CSV or JSON is better as input for GRU.
-            for i in range(len(object_id)):
+            for i in range(len(object_ids)):
                 x1, y1, x2, y2 = [int(i) for i in bbox_xyxy[i]]
-                print(f"ID: {identities[i]}, Class: {self.model.names[object_id[i]]}, X1Y1: {x1}, {y1}, X2Y2: {x2}, {y2}")
+                identity = identities[i].item()
+                classification = self.model.names[object_ids[i]]
+                w = x2 - x1
+                h = y2 - y1
 
-            draw_boxes(im0, bbox_xyxy, self.model.names, object_id,identities)
+                if (classification in relevant_classes):
+                    curr_obj = {
+                        "id": identity,
+                        "classification": classification,
+                        "x": x1,
+                        "y": y1,
+                        "w": w,
+                        "h": h
+                    }
 
-        return log_string
+                    result["objects"].append(curr_obj)
+
+            draw_boxes(im0, bbox_xyxy, self.model.names, object_ids,identities)
+        
+        return result
 
 
 @hydra.main(version_base=None, config_path=str(DEFAULT_CONFIG.parent), config_name=DEFAULT_CONFIG.name)
