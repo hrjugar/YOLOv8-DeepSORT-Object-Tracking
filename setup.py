@@ -14,12 +14,12 @@ REQUIREMENTS = [f'{x.name}{x.specifier}' for x in pkg.parse_requirements((ROOT /
 
 
 def get_version():
-    file = ROOT / 'ultralytics/__init__.py'
+    file = ROOT / 'ultralytics_yolov8_deepsort/__init__.py'
     return re.search(r'^__version__ = [\'"]([^\'"]*)[\'"]', file.read_text(), re.M)[1]
 
 
 setup(
-    name="ultralytics",  # name of pypi package
+    name="ultralytics-yolov8-deepsort",  # name of pypi package
     version=get_version(),  # version of pypi package
     python_requires=">=3.7.0",
     license='GPL-3.0',
