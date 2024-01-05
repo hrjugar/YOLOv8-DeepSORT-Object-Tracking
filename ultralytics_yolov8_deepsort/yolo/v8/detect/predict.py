@@ -239,14 +239,13 @@ class DetectionPredictor(BasePredictor):
         confss = torch.Tensor(confs)
           
         outputs = deepsort.update(xywhs, confss, oids, im0)
+        orig_height, orig_width, _ = im0.shape
 
         if len(outputs) > 0:
             bbox_xyxy = outputs[:, :4]
             identities = outputs[:, -2]
             object_ids = outputs[:, -1]
             
-            # TODO: Save to CSV/JSON file instead of just printing.
-            # Research GRU time series classification and check if CSV or JSON is better as input for GRU.
             for i in range(len(object_ids)):
                 x1, y1, x2, y2 = [int(i) for i in bbox_xyxy[i]]
                 identity = identities[i].item()
@@ -261,7 +260,11 @@ class DetectionPredictor(BasePredictor):
                         "x": x1,
                         "y": y1,
                         "w": w,
-                        "h": h
+                        "h": h,
+                        "xn": x1 / orig_width,
+                        "yn": y1 / orig_height,
+                        "wn": w / orig_width,
+                        "hn": h / orig_height,
                     }
 
                     result["objects"].append(curr_obj)

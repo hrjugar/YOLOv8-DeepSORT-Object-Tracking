@@ -172,13 +172,7 @@ class BasePredictor:
         self.seen, self.windows, self.dt = 0, [], (ops.Profile(), ops.Profile(), ops.Profile())
         self.all_outputs = []
 
-        final_result = {
-            "size": {
-                "width": self.imgsz[0],
-                "height": self.imgsz[1]
-            },
-            "frames": []
-        }
+        final_result = []
 
         for batch in self.dataset:
             self.run_callbacks("on_predict_batch_start")
@@ -203,7 +197,7 @@ class BasePredictor:
                 p = Path(path)
 
                 batch_result = self.write_results(i, preds, (p, im, im0s))
-                final_result["frames"].append(batch_result["objects"])
+                final_result.append(batch_result["objects"])
                 s += batch_result["log_string"]
 
                 if self.args.show:
