@@ -67,6 +67,11 @@ python predict.py model=yolov8l.pt source="test3.mp4"
       <td>The path of the folder where the output will be saved</td>
       <td>Any folder path</td>
     </tr>
+    <tr>
+      <td>socket_port</td>
+      <td>The port to be used for the web sockets that will be used to communicate with the app.</td>
+      <td>Any available port number</td>
+    </tr>
   </tbody>
 </table>
 

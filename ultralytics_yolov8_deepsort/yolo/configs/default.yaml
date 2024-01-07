@@ -111,3 +111,4 @@ v5loader: False  # use legacy YOLOv5 dataloader
 
 # Manually made configs (not in original) ------------------------------------------------------------------------------
 save_dir: null # path to save dir
+socket_port: 8080 # port for socket

@@ -286,7 +286,6 @@ def predict(cfg):
     cfg.imgsz = check_imgsz(cfg.imgsz, min_dim=2)  # check image size
     cfg.source = cfg.source if cfg.source is not None else ROOT / "assets"
 
-    print(f"CFG SAVE DIRRRRRR: {cfg.save_dir}")
     predictor = DetectionPredictor(cfg)
     predictor()
 
