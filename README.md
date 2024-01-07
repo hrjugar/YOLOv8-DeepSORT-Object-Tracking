@@ -75,28 +75,22 @@ As of the moment, there are two outputs that are saved in the *save_dir* folder:
 - The original input video file that has a bounding box marked on each object on each frame
 - The results of DeepSORT in JSON, formatted in the following way:
   ```
-  {
-    "size": {
-      "width": 640,
-      "height": 640
-    },
-    "frames": [
-      // FRAME 1
-      [
-        // FRAME 1 OBJECT 1
-        {
-          "id": 1,
-          "classification": "car",
-          "x": 501,
-          "y": 395,
-          "w": 152,
-          "h": 122
-        },
-        // OTHER FRAME 1 OBJECTS
-        ...
-      ],
-      // OTHER FRAMES
+  [
+    // FRAME 1
+    [
+      // FRAME 1 OBJECT 1
+      {
+        "id": 1,
+        "classification": "car",
+        "x": 501,
+        "y": 395,
+        "w": 152,
+        "h": 122
+      },
+      // OTHER FRAME 1 OBJECTS
       ...
-    ]
-  }
+    ],
+    // OTHER FRAMES
+    ...
+  ]
   ```
