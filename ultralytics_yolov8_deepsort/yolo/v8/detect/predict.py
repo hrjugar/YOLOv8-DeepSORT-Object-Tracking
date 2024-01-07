@@ -1,5 +1,6 @@
 # Ultralytics YOLO 🚀, GPL-3.0 license
 
+import json
 import hydra
 import torch
 import argparse
@@ -22,6 +23,7 @@ from collections import deque
 import numpy as np
 
 import os
+import zmq
 
 palette = (2 ** 11 - 1, 2 ** 15 - 1, 2 ** 20 - 1)
 data_deque = {}
@@ -272,23 +274,42 @@ class DetectionPredictor(BasePredictor):
                     result["objects"].append(curr_obj)
 
             draw_boxes(im0, bbox_xyxy, self.model.names, object_ids,identities)
-        
         return result
 
 
 @hydra.main(version_base=None, config_path=str(DEFAULT_CONFIG.parent), config_name=DEFAULT_CONFIG.name)
 def predict(cfg):
-    script_dir = os.path.dirname(os.path.realpath(__file__))
-    os.chdir(script_dir)
-        
     init_tracker()
     cfg.model = cfg.model or "yolov8n.pt"
     cfg.imgsz = check_imgsz(cfg.imgsz, min_dim=2)  # check image size
     cfg.source = cfg.source if cfg.source is not None else ROOT / "assets"
 
-    predictor = DetectionPredictor(cfg)
+    context = zmq.Context()
+    socket = context.socket(zmq.REQ)
+    socket.setsockopt(zmq.LINGER, 0)
+    port = 8080
+    socket.connect(f"tcp://127.0.0.1:{port}")
+
+    def socket_send_progress(displayText, percent):
+        message = {
+            "model": "deepSORT",
+            "progress": {
+                "percent": percent,
+                "displayText": displayText
+            }
+        }
+        socket.send(json.dumps(message).encode())
+        socket.recv()
+    
+    socket_send_progress("Initializing DeepSORT", 0)
+
+    predictor = DetectionPredictor(socket_send_progress, cfg)
     predictor()
+
+    context.destroy()
 
 
 if __name__ == "__main__":
+    script_dir = os.path.dirname(os.path.realpath(__file__))
+    os.chdir(script_dir)    
     predict()
