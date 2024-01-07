@@ -257,21 +257,20 @@ class DetectionPredictor(BasePredictor):
                 w = x2 - x1
                 h = y2 - y1
 
-                if (classification in relevant_classes):
-                    curr_obj = {
-                        "id": identity,
-                        "classification": classification,
-                        "x": x1,
-                        "y": y1,
-                        "w": w,
-                        "h": h,
-                        "xn": x1 / orig_width,
-                        "yn": y1 / orig_height,
-                        "wn": w / orig_width,
-                        "hn": h / orig_height,
-                    }
+                curr_obj = {
+                    "id": identity,
+                    "classification": classification,
+                    "x": x1,
+                    "y": y1,
+                    "w": w,
+                    "h": h,
+                    "xn": x1 / orig_width,
+                    "yn": y1 / orig_height,
+                    "wn": w / orig_width,
+                    "hn": h / orig_height,
+                }
 
-                    result["objects"].append(curr_obj)
+                result["objects"].append(curr_obj)
 
             draw_boxes(im0, bbox_xyxy, self.model.names, object_ids,identities)
         return result

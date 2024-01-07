@@ -62,7 +62,7 @@ class BasePredictor:
         data_path (str): Path to data.
     """
 
-    def __init__(self, config=DEFAULT_CONFIG, overrides=None):
+    def __init__(self, socket_send_progress, config=DEFAULT_CONFIG, overrides=None):
         """
         Initializes the BasePredictor class.
 
@@ -97,6 +97,8 @@ class BasePredictor:
         self.data_path = None
         self.callbacks = defaultdict(list, {k: [v] for k, v in callbacks.default_callbacks.items()})  # add callbacks
         callbacks.add_integration_callbacks(self)
+
+        self.socket_send_progress = socket_send_progress
 
     def preprocess(self, img):
         pass
@@ -172,7 +174,7 @@ class BasePredictor:
         self.seen, self.windows, self.dt = 0, [], (ops.Profile(), ops.Profile(), ops.Profile())
         self.all_outputs = []
 
-        final_result = []
+        final_frames = []
 
         for batch in self.dataset:
             self.run_callbacks("on_predict_batch_start")
@@ -197,7 +199,7 @@ class BasePredictor:
                 p = Path(path)
 
                 batch_result = self.write_results(i, preds, (p, im, im0s))
-                final_result.append(batch_result["objects"])
+                final_frames.append(batch_result["objects"])
                 s += batch_result["log_string"]
 
                 if self.args.show:
@@ -209,9 +211,41 @@ class BasePredictor:
             # Print time (inference-only)
             LOGGER.info(f"{s}{'' if len(preds) else '(no detections), '}{self.dt[1].dt * 1E3:.1f}ms")
 
+            self.socket_send_progress(
+                f"Frame {self.dataset.frame}/{self.dataset.frame_count}",
+                self.dataset.frame / self.dataset.frame_count * 100
+            )
             self.run_callbacks("on_predict_batch_end")
-    
+
+        final_objects = {}
+        for frame_index, frame in enumerate(final_frames):
+            for obj in frame:
+                obj_id = obj["id"]
+                frame_item = {
+                    "frame": frame_index + 1,
+                    "x": obj["x"],
+                    "y": obj["y"],
+                    "w": obj["w"],
+                    "h": obj["h"],
+                    "xn": obj["xn"],
+                    "yn": obj["yn"],
+                    "wn": obj["wn"],
+                    "hn": obj["hn"],
+                }
+
+                if obj_id in final_objects:
+                    final_objects[obj_id]["frames"].append(frame_item)
+                else:
+                    final_objects[obj_id] = {
+                        "id": obj_id,
+                        "classification": obj["classification"],
+                        "frames": [frame_item]
+                    }
+        
+        final_result = list(final_objects.values())
+        final_result.sort(key=lambda obj: obj["id"])
         result_file = self.save_dir / "deepsort-output.json"
+
         with open(result_file, "w") as f:
             json.dump(final_result, f)
             print(f"PLACED RESULT TO {result_file}")
