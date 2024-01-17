@@ -24,6 +24,7 @@ import numpy as np
 
 import os
 import zmq
+import colorsys
 
 palette = (2 ** 11 - 1, 2 ** 15 - 1, 2 ** 20 - 1)
 data_deque = {}
@@ -81,6 +82,19 @@ def compute_color_for_labels(label):
     else:
         color = [int((p * (label ** 2 - label + 1)) % 255) for p in palette]
     return tuple(color)
+
+def compute_color_for_id(id):
+    """
+    Simple function that adds fixed color depending on the object id
+    """
+
+    hue = (id * 137.5) % 360
+    saturation = 100
+    lightness = 50
+
+    r, g, b = colorsys.hls_to_rgb(hue / 360, lightness / 100, saturation / 100)
+
+    return int(255 * b), int(255 * g), int(255 * r)
 
 def draw_border(img, pt1, pt2, color, thickness, r, d):
     x1,y1 = pt1
@@ -153,7 +167,8 @@ def draw_boxes(img, bbox, names,object_id, identities=None, offset=(0, 0)):
         # create new buffer for new object
         if id not in data_deque:  
           data_deque[id] = deque(maxlen= 64)
-        color = compute_color_for_labels(object_id[i])
+        # color = compute_color_for_labels(object_id[i])
+        color = compute_color_for_id(id)
         obj_name = names[object_id[i]]
         label = '{}{:d}'.format("", id) + ":"+ '%s' % (obj_name)
 
