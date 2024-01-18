@@ -293,11 +293,6 @@ class DetectionPredictor(BasePredictor):
 
 @hydra.main(version_base=None, config_path=str(DEFAULT_CONFIG.parent), config_name=DEFAULT_CONFIG.name)
 def predict(cfg):
-    init_tracker()
-    cfg.model = cfg.model or "yolov8n.pt"
-    cfg.imgsz = check_imgsz(cfg.imgsz, min_dim=2)  # check image size
-    cfg.source = cfg.source if cfg.source is not None else ROOT / "assets"
-
     context = zmq.Context()
     socket = context.socket(zmq.REQ)
     socket.setsockopt(zmq.LINGER, 0)
@@ -315,7 +310,12 @@ def predict(cfg):
         socket.send(json.dumps(message).encode())
         socket.recv()
     
-    socket_send_progress("Initializing DeepSORT", 0)
+    socket_send_progress(f"Loading DeepSORT (model={cfg.model})", 0)
+        
+    init_tracker()
+    cfg.model = cfg.model or "yolov8n.pt"
+    cfg.imgsz = check_imgsz(cfg.imgsz, min_dim=2)  # check image size
+    cfg.source = cfg.source if cfg.source is not None else ROOT / "assets"
 
     predictor = DetectionPredictor(socket_send_progress, cfg)
     predictor()
