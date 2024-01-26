@@ -272,15 +272,18 @@ class DetectionPredictor(BasePredictor):
                 w = x2 - x1
                 h = y2 - y1
 
+                xc = x1 + w / 2
+                yc = y1 + h / 2
+
                 curr_obj = {
                     "id": identity,
                     "classification": classification,
-                    "x": x1,
-                    "y": y1,
+                    "x": xc,
+                    "y": yc,
                     "w": w,
                     "h": h,
-                    "xn": x1 / orig_width,
-                    "yn": y1 / orig_height,
+                    "xn": xc / orig_width,
+                    "yn": yc / orig_height,
                     "wn": w / orig_width,
                     "hn": h / orig_height,
                 }
