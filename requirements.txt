@@ -1,6 +1,9 @@
 # Ultralytics YOLOv8 DeepSORT requirements
 # Usage: pip install -e .
 
+# Install PyTorch manually with CUDA support
+# pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121
+
 # Base ----------------------------------------
 ultralytics
 hydra-core>=1.2.0

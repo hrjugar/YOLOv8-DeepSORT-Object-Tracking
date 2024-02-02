@@ -301,7 +301,7 @@ def predict(cfg):
     socket.setsockopt(zmq.LINGER, 0)
     port = 8080
     socket.connect(f"tcp://127.0.0.1:{port}")
-
+    
     def socket_send_progress(displayText, percent):
         message = {
             "model": "deepSORT",
@@ -313,7 +313,8 @@ def predict(cfg):
         socket.send(json.dumps(message).encode())
         socket.recv()
     
-    socket_send_progress(f"Loading DeepSORT (model={cfg.model})", 0)
+    has_cuda = torch.cuda.is_available()
+    socket_send_progress(f"Loading DeepSORT (model={cfg.model}, cuda={has_cuda})", 0)
         
     init_tracker()
     cfg.model = cfg.model or "yolov8n.pt"
